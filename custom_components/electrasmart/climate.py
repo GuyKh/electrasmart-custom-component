@@ -18,6 +18,8 @@ from homeassistant.components.climate.const import (
     HVAC_MODE_OFF, HVAC_MODE_COOL, HVAC_MODE_FAN_ONLY, HVAC_MODE_DRY, HVAC_MODE_HEAT, HVAC_MODE_HEAT_COOL,
     SUPPORT_TARGET_TEMPERATURE, SUPPORT_FAN_MODE, FAN_OFF, FAN_AUTO, FAN_LOW, FAN_MEDIUM, FAN_HIGH
 )
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
 
 from electrasmart import AC, ElectraAPI
 
@@ -51,9 +53,15 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(
+    hass: HomeAssistantType,
+    config: ConfigType,
+    async_add_entities: Callable,
+    discovery_info: Optional[DiscoveryInfoType] = None,
+) -> None:
     """Set up the ElectraSmartClimate platform."""
     _LOGGER.debug("Setting up the ElectraSmart climate platform")
+    session = async_get_clientsession(hass)
     name = config.get(CONF_NAME)
     imei = config.get(CONF_IMEI)
     token = config.get(CONF_TOKEN)
@@ -61,10 +69,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     # TODO: api_verbosity config
     ElectraAPI.GLOBAL_VERBOSE = True
 
-    add_entities(
-        [ElectraSmartClimate(name, imei, token, ac_id)]
-    )
-
+    async_add_entities([ElectraSmartClimate(name, imei, token, ac_id)], update_before_add=True)
 
 class ElectraSmartClimate(ClimateEntity):
     SID_RENEW_INTERVAL = 20
